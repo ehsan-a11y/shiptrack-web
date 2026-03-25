@@ -916,18 +916,32 @@ function renderRecent(){
     </div>`).join('');
 }
 
+// ── localStorage cache ────────────────────────────────────────────
+function saveLocal(){ try{ localStorage.setItem('st_rows',JSON.stringify(rows)); }catch{} }
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem('st_rows')||'[]'); }catch{ return []; } }
+
+// ── Re-render after any local change ─────────────────────────────
+function refresh(){ saveLocal(); recalcStats(); applyFilter(); renderRecent(); }
+
 // ── Load data ─────────────────────────────────────────────────────
 async function loadData(){
   try {
     const [rS,rD]=await Promise.all([fetch('/api/shipments'),fetch('/api/dashboard')]);
-    rows=await rS.json();
+    const fetched=await rS.json();
     const dash=await rD.json();
+    if(fetched.length > 0){
+      // Server has data (persistent DB or same Vercel instance) — use it
+      rows = fetched;
+      saveLocal();
+    } else if(rows.length === 0){
+      // Both server and memory empty — try localStorage cache
+      rows = loadLocal();
+    }
+    // If server returned empty but memory already has rows (ephemeral SQLite case),
+    // keep the in-memory rows so we don't wipe locally-added records
     updateStats(dash); updateCharts(dash); applyFilter(); renderRecent();
-    // Flash sync dot green to show devices are in sync
     const dot=document.getElementById('syncDot');
-    dot.classList.remove('pulse');
-    void dot.offsetWidth;
-    dot.classList.add('pulse');
+    dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
   } catch { toast('Failed to sync',false); }
 }
 
@@ -1009,7 +1023,7 @@ async function saveShipment(){
         if(isAdd){ rows.unshift(json.record); }
         else { const i=rows.findIndex(r=>r.id===json.record.id); if(i>=0) rows[i]=json.record; }
       }
-      recalcStats(); applyFilter(); renderRecent();
+      refresh();
       toast(isAdd?'Shipment added!':'Shipment updated!');
       closeEdit();
     }
@@ -1023,7 +1037,7 @@ async function deleteShipment(){
   try {
     await fetch(`/api/shipments/${sid}`,{method:'DELETE'});
     rows=rows.filter(r=>r.id!==sid);
-    recalcStats(); applyFilter(); renderRecent();
+    refresh();
     toast('Deleted'); closeEdit();
   } catch { toast('Delete failed',false); }
 }
@@ -1041,7 +1055,7 @@ async function quickStatus(id,newStatus){
     const json=await res.json();
     if(json.error){ toast(json.error,false); return; }
     if(json.record){ const i=rows.findIndex(r=>r.id===id); if(i>=0) rows[i]=json.record; }
-    recalcStats(); toast('Status → '+newStatus);
+    refresh(); toast('Status → '+newStatus);
   } catch { toast('Update failed',false); }
 }
 
@@ -1134,7 +1148,10 @@ window.addEventListener('appinstalled',()=>{
 
 // ── Init ─────────────────────────────────────────────────────────
 document.getElementById('eDate').value = todayStr();
-loadData();
+// Show cached records instantly while waiting for server
+rows = loadLocal();
+if(rows.length){ recalcStats(); applyFilter(); renderRecent(); }
+loadData(); // then sync from server
 
 // ── Auto-sync every 30 s (keeps all devices in sync) ─────────────
 let syncTimer = setInterval(() => { if(!document.hidden) loadData(); }, 30000);
