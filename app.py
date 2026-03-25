@@ -93,8 +93,11 @@ def add_shipment():
             "INSERT INTO shipments (ship_date,awb,shipping_cost,status,invoice_file,awb_file) VALUES(?,?,?,?,?,?)",
             (d['ship_date'], d['awb'], float(d.get('shipping_cost') or 0), d['status'], inv, awb_f)
         )
-        conn.commit(); conn.close()
-        return jsonify({'success': True})
+        conn.commit()
+        new_id  = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        new_row = dict(conn.execute("SELECT * FROM shipments WHERE id=?", (new_id,)).fetchone())
+        conn.close()
+        return jsonify({'success': True, 'record': new_row})
     except sqlite3.IntegrityError:
         return jsonify({'error': 'AWB already exists'}), 400
     except Exception as e:
@@ -113,8 +116,10 @@ def update_shipment(sid):
             "UPDATE shipments SET ship_date=?,awb=?,shipping_cost=?,status=?,invoice_file=?,awb_file=? WHERE id=?",
             (d['ship_date'], d['awb'], float(d.get('shipping_cost') or 0), d['status'], inv, awb_f, sid)
         )
-        conn.commit(); conn.close()
-        return jsonify({'success': True})
+        conn.commit()
+        updated = dict(conn.execute("SELECT * FROM shipments WHERE id=?", (sid,)).fetchone())
+        conn.close()
+        return jsonify({'success': True, 'record': updated})
     except sqlite3.IntegrityError:
         return jsonify({'error': 'AWB already exists'}), 400
     except Exception as e:

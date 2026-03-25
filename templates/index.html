@@ -717,7 +717,8 @@ async function submitForm() {
   if (inv)  fd.append('invoice_file', inv);
   if (awbf) fd.append('awb_file', awbf);
 
-  const btn = document.getElementById('subBtn');
+  const btn    = document.getElementById('subBtn');
+  const wasNew = !eid;
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>';
 
@@ -726,20 +727,44 @@ async function submitForm() {
     const method = eid ? 'PUT' : 'POST';
     const res    = await fetch(url, { method, body: fd });
     const json   = await res.json();
-    if (json.error) { toast(json.error, false); }
-    else { toast(eid ? 'Shipment updated!' : 'Shipment added!'); clearForm(); closePanel(); await loadData(); }
+    if (json.error) {
+      toast(json.error, false);
+    } else {
+      toast(wasNew ? 'Shipment added!' : 'Shipment updated!');
+      // --- Optimistic update: patch local rows immediately ---
+      if (json.record) {
+        if (wasNew) {
+          rows.unshift(json.record);           // prepend new record
+        } else {
+          const idx = rows.findIndex(r => r.id === json.record.id);
+          if (idx >= 0) rows[idx] = json.record; else rows.unshift(json.record);
+        }
+        recalcStats();   // update dashboard from local rows
+        applyFilter();   // re-render table immediately
+      }
+      clearForm();
+      closePanel();
+      loadData();        // background sync (non-blocking)
+    }
   } catch { toast('Request failed', false); }
   finally {
     btn.disabled = false;
-    btn.textContent = eid ? '💾 Update' : '＋ Add Shipment';
+    btn.textContent = wasNew ? '＋ Add Shipment' : '💾 Update';
   }
 }
 
 async function deleteRow() {
   if (!eid || !confirm('Delete this shipment?')) return;
+  const deletedId = eid;
   try {
-    await fetch(`/api/shipments/${eid}`, { method: 'DELETE' });
-    toast('Deleted'); clearForm(); closePanel(); await loadData();
+    await fetch(`/api/shipments/${deletedId}`, { method: 'DELETE' });
+    toast('Deleted');
+    rows = rows.filter(r => r.id !== deletedId);  // remove from local array
+    recalcStats();
+    applyFilter();
+    clearForm();
+    closePanel();
+    loadData();   // background sync
   } catch { toast('Delete failed', false); }
 }
 
@@ -773,6 +798,13 @@ function quickFilter(status) {
     c.classList.toggle('active', c.dataset.s === (status || 'Total') && !status || (status && c.dataset.s === status));
   });
   if (window.innerWidth <= 820) closeSidebar();
+}
+
+// ── Recalc stats from local rows (instant, no server round-trip) ────
+function recalcStats() {
+  const d = { Total: rows.length, Transit: 0, Delivered: 0, Returned: 0 };
+  rows.forEach(r => { if (d[r.status] !== undefined) d[r.status]++; });
+  updateStats(d); updateChart(d);
 }
 
 // ── Load data ───────────────────────────────────────────────────────
