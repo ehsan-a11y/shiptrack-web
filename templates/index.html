@@ -307,6 +307,18 @@ tbody tr:last-child td { border-bottom:none; }
 }
 .flink:hover { background:rgba(99,102,241,.2); }
 
+.add-ship-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 50px; border: none;
+  background: linear-gradient(135deg, var(--primary), #8b5cf6);
+  color: #fff; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 18px rgba(99,102,241,.45);
+  transition: transform .2s, box-shadow .2s;
+}
+.add-ship-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,.55); }
+.add-ship-btn svg { flex-shrink: 0; }
+
 .status-select {
   appearance: none; -webkit-appearance: none;
   border: none; border-radius: 20px;
@@ -438,31 +450,10 @@ tbody tr:last-child td { border-bottom:none; }
       <span>Dashboard</span>
     </div>
 
-    <div class="nav-item" id="nav-add" onclick="gotoPage('add')">
-      <span class="nav-icon">➕</span>
-      <span>Add Shipment</span>
-    </div>
-
-    <div class="nav-item" id="nav-track" onclick="gotoPage('track')">
-      <span class="nav-icon">🚚</span>
-      <span>Track Shipment</span>
+    <div class="nav-item" id="nav-shipment" onclick="gotoPage('shipment')">
+      <span class="nav-icon">📦</span>
+      <span>Shipment</span>
       <span class="nav-badge" id="navBadge">0</span>
-    </div>
-
-    <div class="nav-divider"></div>
-    <div class="nav-section-label">Status</div>
-
-    <div class="nav-item" onclick="gotoTrackFilter('Transit')">
-      <span class="nav-icon">🔵</span>
-      <span style="color:#60a5fa">In Transit</span>
-    </div>
-    <div class="nav-item" onclick="gotoTrackFilter('Delivered')">
-      <span class="nav-icon">🟢</span>
-      <span style="color:#34d399">Delivered</span>
-    </div>
-    <div class="nav-item" onclick="gotoTrackFilter('Returned')">
-      <span class="nav-icon">🟡</span>
-      <span style="color:#fbbf24">Returned</span>
     </div>
 
   </nav>
@@ -516,75 +507,24 @@ tbody tr:last-child td { border-bottom:none; }
       </div>
     </div>
 
-    <!-- ════════ PAGE: ADD SHIPMENT ════════ -->
-    <div class="page" id="page-add">
-      <div class="page-title">Add Shipment</div>
-      <div class="page-sub">Fill in the details to record a new shipment</div>
+    <!-- ════════ PAGE: SHIPMENT ════════ -->
+    <div class="page" id="page-shipment">
 
-      <div class="form-card">
-        <div class="form-card-header">
-          <div class="form-card-title">✈️ Shipment Details</div>
-          <div class="form-card-sub">All fields marked * are required</div>
+      <!-- Page header with Add button -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div class="page-title">Shipment</div>
+          <div class="page-sub" style="margin-bottom:0">Manage and track all your shipments</div>
         </div>
-        <div class="form-card-body">
-          <div class="form-grid">
-
-            <div class="fgrp">
-              <label>📅 Ship Date *</label>
-              <input type="date" id="aDate">
-            </div>
-
-            <div class="fgrp">
-              <label>🏷 Status *</label>
-              <select id="aStatus">
-                <option>Transit</option>
-                <option>Delivered</option>
-                <option>Returned</option>
-              </select>
-            </div>
-
-            <div class="fgrp form-full">
-              <label>✈️ AWB No. *</label>
-              <input type="text" id="aAwb" placeholder="Enter AWB number">
-            </div>
-
-            <div class="fgrp form-full">
-              <label>💰 Shipping Cost</label>
-              <input type="number" id="aCost" placeholder="0.00" step="0.01" min="0">
-            </div>
-
-            <div class="fgrp form-full">
-              <label>📄 Invoice File</label>
-              <div class="file-row">
-                <div class="fdisp" id="aInvDisp" onclick="document.getElementById('aInv').click()">Click to upload…</div>
-                <input type="file" id="aInv" accept=".pdf,.png,.jpg,.jpeg" onchange="setFDisp('aInv','aInvDisp')">
-              </div>
-            </div>
-
-            <div class="fgrp form-full">
-              <label>📋 AWB File</label>
-              <div class="file-row">
-                <div class="fdisp" id="aAwbDisp" onclick="document.getElementById('aAwbF').click()">Click to upload…</div>
-                <input type="file" id="aAwbF" accept=".pdf,.png,.jpg,.jpeg" onchange="setFDisp('aAwbF','aAwbDisp')">
-              </div>
-            </div>
-
-          </div>
-
-          <div class="form-actions">
-            <button class="btn btn-primary" id="addBtn" onclick="addShipment()">➕ Add Shipment</button>
-            <button class="btn btn-ghost" onclick="clearAddForm()">Clear</button>
-          </div>
-        </div>
+        <button class="add-ship-btn" onclick="openAddPanel()" title="Add New Shipment">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Add Shipment</span>
+        </button>
       </div>
-    </div>
 
-    <!-- ════════ PAGE: TRACK SHIPMENT ════════ -->
-    <div class="page" id="page-track">
-      <div class="page-title">Track Shipment</div>
-      <div class="page-sub">Search, filter and manage all shipments</div>
-
-      <div class="filter-bar">
+      <div class="filter-bar" style="margin-top:16px">
         <div class="fg">
           <label>📅 Date</label>
           <input type="date" id="fDate" oninput="applyFilter()">
@@ -631,11 +571,11 @@ tbody tr:last-child td { border-bottom:none; }
   </main>
 </div>
 
-<!-- ════════ EDIT PANEL (slide-in when row clicked) ════════ -->
+<!-- ════════ ADD / EDIT PANEL ════════ -->
 <div class="edit-overlay" id="editOverlay" onclick="closeEdit()"></div>
 <div class="edit-panel" id="editPanel">
   <div class="edit-ph">
-    <span class="edit-ph-title">Edit Shipment</span>
+    <span class="edit-ph-title" id="panelTitle">Add Shipment</span>
     <button class="btn btn-icon btn-ghost" onclick="closeEdit()">✕</button>
   </div>
   <div class="edit-pb">
@@ -676,8 +616,8 @@ tbody tr:last-child td { border-bottom:none; }
     </div>
   </div>
   <div class="edit-pf">
-    <button class="btn btn-primary" id="updBtn" onclick="updateShipment()">💾 Update</button>
-    <button class="btn btn-danger"  onclick="deleteShipment()">🗑 Delete</button>
+    <button class="btn btn-primary" id="updBtn" onclick="saveShipment()">💾 Update</button>
+    <button class="btn btn-danger"  id="delShipBtn" onclick="deleteShipment()">🗑 Delete</button>
     <button class="btn btn-ghost"   onclick="closeEdit()">Cancel</button>
   </div>
 </div>
@@ -742,7 +682,7 @@ function toast(msg, ok=true){
 function toggleNav(){ document.getElementById('nav').classList.toggle('open'); document.getElementById('navOverlay').classList.toggle('show'); }
 function closeNav() { document.getElementById('nav').classList.remove('open'); document.getElementById('navOverlay').classList.remove('show'); }
 
-const PAGE_LABELS = { dashboard:'Dashboard', add:'Add Shipment', track:'Track Shipment' };
+const PAGE_LABELS = { dashboard:'Dashboard', shipment:'Shipment' };
 
 function gotoPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -751,11 +691,10 @@ function gotoPage(name){
   document.getElementById('nav-'+name).classList.add('active');
   document.getElementById('pageLabel').textContent = PAGE_LABELS[name];
   closeNav();
-  if(name==='add') document.getElementById('aDate').value = todayStr();
 }
 
 function gotoTrackFilter(status){
-  gotoPage('track');
+  gotoPage('shipment');
   document.getElementById('fStatus').value = status;
   document.getElementById('fDate').value = '';
   document.getElementById('fAwb').value = '';
@@ -769,111 +708,93 @@ function setFDisp(inpId, dispId){
 }
 function openFile(t){ const fn = t==='inv'?exInv:exAwb; if(fn) window.open('/uploads/'+fn,'_blank'); }
 
-// ── ADD SHIPMENT ───────────────────────────────────────────────────
-async function addShipment(){
-  const awb = document.getElementById('aAwb').value.trim();
-  if(!awb){ toast('AWB No. is required', false); return; }
-
-  const fd = new FormData();
-  fd.append('ship_date', input2stored(document.getElementById('aDate').value));
-  fd.append('awb',       awb);
-  fd.append('shipping_cost', document.getElementById('aCost').value || '0');
-  fd.append('status',    document.getElementById('aStatus').value);
-  const inv  = document.getElementById('aInv').files[0];
-  const awbf = document.getElementById('aAwbF').files[0];
-  if(inv)  fd.append('invoice_file', inv);
-  if(awbf) fd.append('awb_file', awbf);
-
-  const btn = document.getElementById('addBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Adding…';
-
-  try {
-    const res  = await fetch('/api/shipments', {method:'POST', body:fd});
-    const json = await res.json();
-    if(json.error){
-      toast(json.error, false);
-    } else {
-      if(json.record) rows.unshift(json.record);
-      recalcStats(); applyFilter(); renderRecent();
-      toast('Shipment added! ✓');
-      clearAddForm();
-      // switch to track page to show the new record
-      gotoPage('track');
-    }
-  } catch { toast('Request failed', false); }
-  finally { btn.disabled=false; btn.textContent='➕ Add Shipment'; }
+// ── ADD / EDIT PANEL ──────────────────────────────────────────────
+function openAddPanel(){
+  exInv=''; exAwb='';
+  document.getElementById('panelTitle').textContent = 'Add Shipment';
+  document.getElementById('eId').value     = '';
+  document.getElementById('eDate').value   = todayStr();
+  document.getElementById('eAwb').value    = '';
+  document.getElementById('eCost').value   = '';
+  document.getElementById('eStatus').value = 'Transit';
+  document.getElementById('eInv').value    = '';
+  document.getElementById('eAwbF').value   = '';
+  document.getElementById('eInvDisp').textContent = 'Click to upload…';
+  document.getElementById('eAwbDisp').textContent = 'Click to upload…';
+  document.getElementById('eInvOpen').style.display = 'none';
+  document.getElementById('eAwbOpen').style.display = 'none';
+  document.getElementById('updBtn').textContent = '➕ Add Shipment';
+  document.getElementById('delShipBtn').style.display = 'none';
+  document.getElementById('editPanel').classList.add('open');
+  document.getElementById('editOverlay').classList.add('show');
 }
 
-function clearAddForm(){
-  document.getElementById('aDate').value  = todayStr();
-  document.getElementById('aAwb').value   = '';
-  document.getElementById('aCost').value  = '';
-  document.getElementById('aStatus').value= 'Transit';
-  document.getElementById('aInv').value   = '';
-  document.getElementById('aAwbF').value  = '';
-  document.getElementById('aInvDisp').textContent = 'Click to upload…';
-  document.getElementById('aAwbDisp').textContent = 'Click to upload…';
-}
-
-// ── EDIT PANEL ─────────────────────────────────────────────────────
 function openEdit(ship){
   exInv = ship.invoice_file||''; exAwb = ship.awb_file||'';
-  document.getElementById('eId').value    = ship.id;
-  document.getElementById('eDate').value  = stored2input(ship.ship_date);
-  document.getElementById('eAwb').value   = ship.awb;
-  document.getElementById('eCost').value  = ship.shipping_cost||'';
-  document.getElementById('eStatus').value= ship.status;
-  document.getElementById('eInv').value   = '';
-  document.getElementById('eAwbF').value  = '';
+  document.getElementById('panelTitle').textContent = 'Edit Shipment';
+  document.getElementById('eId').value     = ship.id;
+  document.getElementById('eDate').value   = stored2input(ship.ship_date);
+  document.getElementById('eAwb').value    = ship.awb;
+  document.getElementById('eCost').value   = ship.shipping_cost||'';
+  document.getElementById('eStatus').value = ship.status;
+  document.getElementById('eInv').value    = '';
+  document.getElementById('eAwbF').value   = '';
   document.getElementById('eInvDisp').textContent = exInv || 'Click to replace…';
   document.getElementById('eAwbDisp').textContent = exAwb || 'Click to replace…';
   document.getElementById('eInvOpen').style.display = exInv ? '' : 'none';
   document.getElementById('eAwbOpen').style.display = exAwb ? '' : 'none';
+  document.getElementById('updBtn').textContent = '💾 Update';
+  document.getElementById('delShipBtn').style.display = '';
   document.getElementById('editPanel').classList.add('open');
   document.getElementById('editOverlay').classList.add('show');
 }
+
 function closeEdit(){
   document.getElementById('editPanel').classList.remove('open');
   document.getElementById('editOverlay').classList.remove('show');
 }
 
-async function updateShipment(){
+async function saveShipment(){
   const sid = document.getElementById('eId').value;
   const awb = document.getElementById('eAwb').value.trim();
   if(!awb){ toast('AWB No. is required', false); return; }
 
   const fd = new FormData();
-  fd.append('ship_date', input2stored(document.getElementById('eDate').value));
-  fd.append('awb',       awb);
+  fd.append('ship_date',     input2stored(document.getElementById('eDate').value));
+  fd.append('awb',           awb);
   fd.append('shipping_cost', document.getElementById('eCost').value||'0');
-  fd.append('status',    document.getElementById('eStatus').value);
+  fd.append('status',        document.getElementById('eStatus').value);
   const inv  = document.getElementById('eInv').files[0];
   const awbf = document.getElementById('eAwbF').files[0];
   if(inv)  fd.append('invoice_file', inv);
   if(awbf) fd.append('awb_file', awbf);
 
   const btn = document.getElementById('updBtn');
+  const isAdd = !sid;
   btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
 
   try {
-    const res  = await fetch(`/api/shipments/${sid}`, {method:'PUT', body:fd});
-    const json = await res.json();
+    const url    = isAdd ? '/api/shipments' : `/api/shipments/${sid}`;
+    const method = isAdd ? 'POST' : 'PUT';
+    const res    = await fetch(url, {method, body:fd});
+    const json   = await res.json();
     if(json.error){ toast(json.error, false); }
     else {
       if(json.record){
-        const idx = rows.findIndex(r=>r.id===json.record.id);
-        if(idx>=0) rows[idx]=json.record; else rows.unshift(json.record);
+        if(isAdd){ rows.unshift(json.record); }
+        else { const i=rows.findIndex(r=>r.id===json.record.id); if(i>=0) rows[i]=json.record; }
       }
       recalcStats(); applyFilter(); renderRecent();
-      toast('Shipment updated!'); closeEdit();
+      toast(isAdd ? 'Shipment added!' : 'Shipment updated!');
+      closeEdit();
     }
   } catch { toast('Request failed', false); }
-  finally { btn.disabled=false; btn.textContent='💾 Update'; }
+  finally { btn.disabled=false; btn.textContent = sid ? '💾 Update' : '➕ Add Shipment'; }
 }
 
 async function deleteShipment(){
   const sid = +document.getElementById('eId').value;
-  if(!confirm('Delete this shipment?')) return;
+  if(!sid || !confirm('Delete this shipment?')) return;
   try {
     await fetch(`/api/shipments/${sid}`, {method:'DELETE'});
     rows = rows.filter(r=>r.id!==sid);
