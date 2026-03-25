@@ -307,6 +307,20 @@ tbody tr:last-child td { border-bottom:none; }
 }
 .flink:hover { background:rgba(99,102,241,.2); }
 
+.status-select {
+  appearance: none; -webkit-appearance: none;
+  border: none; border-radius: 20px;
+  padding: 4px 12px; font-size: 11px; font-weight: 700;
+  cursor: pointer; font-family: inherit; outline: none;
+  transition: box-shadow .2s, opacity .2s;
+}
+.status-select:hover { opacity: .85; }
+.status-select:focus { box-shadow: 0 0 0 3px var(--pglow); }
+.status-select.status-transit   { background:rgba(59,130,246,.15);  color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
+.status-select.status-delivered { background:rgba(16,185,129,.15);  color:#34d399; border:1px solid rgba(16,185,129,.3); }
+.status-select.status-returned  { background:rgba(245,158,11,.15);  color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
+.status-select option { background: var(--surface2); color: var(--text); font-size: 13px; }
+
 .track-btn {
   display:inline-flex; align-items:center; justify-content:center;
   width:34px; height:34px; border-radius:50%; border:none; cursor:pointer;
@@ -877,6 +891,36 @@ function selectRow(id){
   if(ship) openEdit(ship);
 }
 
+// ── QUICK STATUS UPDATE ────────────────────────────────────────────
+async function quickStatus(id, newStatus) {
+  const ship = rows.find(r => r.id === id);
+  if (!ship) return;
+
+  const fd = new FormData();
+  fd.append('ship_date',     ship.ship_date || '');
+  fd.append('awb',           ship.awb);
+  fd.append('shipping_cost', ship.shipping_cost || '0');
+  fd.append('status',        newStatus);
+
+  // Update select colour immediately
+  const sel = document.querySelector(`#r${id} .status-select`);
+  if (sel) {
+    sel.className = `status-select status-${newStatus.toLowerCase()}`;
+  }
+
+  try {
+    const res  = await fetch(`/api/shipments/${id}`, { method:'PUT', body:fd });
+    const json = await res.json();
+    if (json.error) { toast(json.error, false); return; }
+    if (json.record) {
+      const idx = rows.findIndex(r => r.id === id);
+      if (idx >= 0) rows[idx] = json.record;
+    }
+    recalcStats();
+    toast(`Status → ${newStatus}`);
+  } catch { toast('Update failed', false); }
+}
+
 // ── FILTER ─────────────────────────────────────────────────────────
 function applyFilter(){
   const date   = document.getElementById('fDate').value;
@@ -982,13 +1026,20 @@ function renderTable(data){
     return;
   }
   tb.innerHTML = data.map(r=>`
-    <tr id="r${r.id}">
+    <tr id="r${r.id}" onclick="selectRow(${r.id})" style="cursor:pointer">
       <td style="color:var(--muted);font-size:11px">${r.id}</td>
       <td>${r.ship_date||'—'}</td>
       <td><strong>${r.awb}</strong></td>
       <td>${(+r.shipping_cost||0).toFixed(2)}</td>
-      <td>${badge(r.status)}</td>
-      <td style="text-align:center">
+      <td onclick="event.stopPropagation()">
+        <select class="status-select status-${r.status.toLowerCase()}"
+                onchange="quickStatus(${r.id},this.value)">
+          <option value="Transit"   ${r.status==='Transit'  ?'selected':''}>🚚 Transit</option>
+          <option value="Delivered" ${r.status==='Delivered'?'selected':''}>✅ Delivered</option>
+          <option value="Returned"  ${r.status==='Returned' ?'selected':''}>↩️ Returned</option>
+        </select>
+      </td>
+      <td style="text-align:center" onclick="event.stopPropagation()">
         <button class="track-btn" onclick="window.open('https://parcelsapp.com/en/tracking/'+encodeURIComponent('${r.awb}'),'_blank')" title="Track on ParcelsApp">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
