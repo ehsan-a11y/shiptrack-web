@@ -731,20 +731,18 @@ async function submitForm() {
       toast(json.error, false);
     } else {
       toast(wasNew ? 'Shipment added!' : 'Shipment updated!');
-      // --- Optimistic update: patch local rows immediately ---
       if (json.record) {
         if (wasNew) {
-          rows.unshift(json.record);           // prepend new record
+          rows.unshift(json.record);
         } else {
           const idx = rows.findIndex(r => r.id === json.record.id);
           if (idx >= 0) rows[idx] = json.record; else rows.unshift(json.record);
         }
-        recalcStats();   // update dashboard from local rows
-        applyFilter();   // re-render table immediately
       }
       clearForm();
       closePanel();
-      loadData();        // background sync (non-blocking)
+      recalcStats();
+      applyFilter();
     }
   } catch { toast('Request failed', false); }
   finally {
@@ -759,12 +757,11 @@ async function deleteRow() {
   try {
     await fetch(`/api/shipments/${deletedId}`, { method: 'DELETE' });
     toast('Deleted');
-    rows = rows.filter(r => r.id !== deletedId);  // remove from local array
-    recalcStats();
-    applyFilter();
+    rows = rows.filter(r => r.id !== deletedId);
     clearForm();
     closePanel();
-    loadData();   // background sync
+    recalcStats();
+    applyFilter();
   } catch { toast('Delete failed', false); }
 }
 
