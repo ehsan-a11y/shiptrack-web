@@ -989,7 +989,7 @@ function renderTable(data){
       <td>${(+r.shipping_cost||0).toFixed(2)}</td>
       <td>${badge(r.status)}</td>
       <td style="text-align:center">
-        <button class="track-btn" onclick="selectRow(${r.id})" title="Track Shipment">
+        <button class="track-btn" onclick="window.open('https://parcelsapp.com/en/tracking/'+encodeURIComponent('${r.awb}'),'_blank')" title="Track on ParcelsApp">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
