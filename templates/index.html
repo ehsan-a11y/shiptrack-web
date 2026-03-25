@@ -307,6 +307,19 @@ tbody tr:last-child td { border-bottom:none; }
 }
 .flink:hover { background:rgba(99,102,241,.2); }
 
+.track-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:34px; height:34px; border-radius:50%; border:none; cursor:pointer;
+  background:rgba(99,102,241,.12); color:#818cf8;
+  transition:background .2s, transform .2s, box-shadow .2s;
+}
+.track-btn:hover {
+  background:rgba(99,102,241,.28); color:#a5b4fc;
+  transform:scale(1.12);
+  box-shadow:0 0 0 4px rgba(99,102,241,.15);
+}
+.track-btn svg { display:block; }
+
 /* ══════════════ EDIT PANEL (slide-in) ══════════════ */
 .edit-overlay {
   display:none; position:fixed; inset:0;
@@ -590,11 +603,11 @@ tbody tr:last-child td { border-bottom:none; }
             <thead>
               <tr>
                 <th>ID</th><th>Date</th><th>AWB No.</th>
-                <th>Cost</th><th>Status</th><th>Invoice</th><th>AWB File</th>
+                <th>Cost</th><th>Status</th><th style="text-align:center">Track</th>
               </tr>
             </thead>
             <tbody id="tBody">
-              <tr><td colspan="7"><div class="empty"><div class="empty-ico">⏳</div><div>Loading…</div></div></td></tr>
+              <tr><td colspan="6"><div class="empty"><div class="empty-ico">⏳</div><div>Loading…</div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -965,18 +978,24 @@ function renderTable(data){
   document.getElementById('tCnt').textContent = `${data.length} record${data.length!==1?'s':''}`;
   const tb = document.getElementById('tBody');
   if(!data.length){
-    tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-ico">📭</div><div>No shipments found</div></div></td></tr>';
+    tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-ico">📭</div><div>No shipments found</div></div></td></tr>';
     return;
   }
   tb.innerHTML = data.map(r=>`
-    <tr id="r${r.id}" onclick="selectRow(${r.id})">
+    <tr id="r${r.id}">
       <td style="color:var(--muted);font-size:11px">${r.id}</td>
       <td>${r.ship_date||'—'}</td>
       <td><strong>${r.awb}</strong></td>
       <td>${(+r.shipping_cost||0).toFixed(2)}</td>
       <td>${badge(r.status)}</td>
-      <td>${r.invoice_file?`<a href="/uploads/${r.invoice_file}" target="_blank" class="flink">📄 View</a>`:'<span style="color:var(--muted)">—</span>'}</td>
-      <td>${r.awb_file?`<a href="/uploads/${r.awb_file}" target="_blank" class="flink">📋 View</a>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:center">
+        <button class="track-btn" onclick="selectRow(${r.id})" title="Track Shipment">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+          </svg>
+        </button>
+      </td>
     </tr>`).join('');
 }
 
