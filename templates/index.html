@@ -839,7 +839,7 @@ function setEditMode(on) {
   if (!on) selectedId = null;
 }
 
-// ─── New / Clear form ─────────────────────────────────────────────────────────
+// ─── Modal open / close ───────────────────────────────────────────────────────
 function openModal() {
   document.getElementById('modalOverlay').classList.add('open');
   document.getElementById('modalPanel').classList.add('open');
@@ -852,15 +852,16 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-function newShipment() {
+// ─── Reset form fields (does NOT open/close modal) ───────────────────────────
+function resetFormFields() {
   exAwb = ''; exInv = '';
-  document.getElementById('eid').value   = '';
-  document.getElementById('iDate').value = todayISO();
-  document.getElementById('iAwb').value  = '';
-  document.getElementById('iCost').value = '';
+  document.getElementById('eid').value     = '';
+  document.getElementById('iDate').value   = todayISO();
+  document.getElementById('iAwb').value    = '';
+  document.getElementById('iCost').value   = '';
   document.getElementById('iStatus').value = 'Transit';
-  document.getElementById('iAwbF').value = '';
-  document.getElementById('iInv').value  = '';
+  document.getElementById('iAwbF').value   = '';
+  document.getElementById('iInv').value    = '';
   ['awbDisp', 'invDisp'].forEach((id, i) => {
     document.getElementById(id).textContent =
       i === 0 ? '📎 Click to attach AWB file…' : '📎 Click to attach Invoice file…';
@@ -870,12 +871,18 @@ function newShipment() {
   document.getElementById('invViewBtn').style.display = 'none';
   document.querySelectorAll('#tBody tr.selected').forEach(r => r.classList.remove('selected'));
   setEditMode(false);
+}
+
+// ─── New shipment: reset fields then open modal ───────────────────────────────
+function newShipment() {
+  resetFormFields();
   openModal();
   setTimeout(() => document.getElementById('iDate').focus(), 220);
 }
 
+// ─── Clear button inside modal: just reset fields, keep modal open ────────────
 function clearForm() {
-  newShipment();
+  resetFormFields();
 }
 
 // ─── Load row into form ───────────────────────────────────────────────────────
@@ -945,7 +952,17 @@ async function saveRecord() {
     const res  = await fetch('/api/shipments', { method: 'POST', body: fd });
     const json = await res.json();
     if (json.error) { toast(json.error, 'err'); }
-    else { toast('Shipment saved successfully!'); closeModal(); newShipment(); await loadData(); }
+    else {
+      // Add new record to local state immediately — don't wait for reload
+      if (json.record) {
+        allRows.unshift(json.record);
+        saveLocal(allRows);
+      }
+      closeModal();
+      resetFormFields();
+      await loadData();         // sync with server (also re-renders table)
+      toast('Shipment saved!');
+    }
   } catch { toast('Save failed — check connection', 'err'); }
   finally  { btn.disabled = false; btn.innerHTML = '💾 Save Record'; }
 }
@@ -964,7 +981,16 @@ async function updateRecord() {
     const res  = await fetch(`/api/shipments/${selectedId}`, { method: 'PUT', body: fd });
     const json = await res.json();
     if (json.error) { toast(json.error, 'err'); }
-    else { toast('Record updated successfully!'); closeModal(); await loadData(); }
+    else {
+      if (json.record) {
+        const idx = allRows.findIndex(r => r.id === selectedId);
+        if (idx !== -1) allRows[idx] = json.record;
+        saveLocal(allRows);
+      }
+      closeModal(); resetFormFields();
+      await loadData();
+      toast('Record updated!');
+    }
   } catch { toast('Update failed — check connection', 'err'); }
   finally  { btn.disabled = false; btn.innerHTML = '✏️ Update Record'; }
 }
@@ -976,9 +1002,14 @@ async function deleteRecord() {
 
   try {
     await fetch(`/api/shipments/${selectedId}`, { method: 'DELETE' });
-    toast('Record deleted');
+    allRows = allRows.filter(r => r.id !== selectedId);
+    saveLocal(allRows);
     closeModal();
-    await loadData();
+    resetFormFields();
+    renderTable(filtered());
+    updateDashboardStats();
+    toast('Record deleted');
+    loadData();   // background sync
   } catch { toast('Delete failed', 'err'); }
 }
 
@@ -1131,19 +1162,59 @@ function updateDashboard(dash, recent) {
     </tr>`).join('');
 }
 
-// ─── Load data from server ────────────────────────────────────────────────────
+// ─── localStorage helpers ─────────────────────────────────────────────────────
+const LS_KEY = 'shiptrack_v1';
+
+function saveLocal(rows) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(rows)); } catch {}
+}
+
+function loadLocal() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+}
+
+// ─── Compute dashboard stats from allRows ─────────────────────────────────────
+function statsFromRows(rows) {
+  return {
+    Total:     rows.length,
+    Transit:   rows.filter(r => r.status === 'Transit').length,
+    Delivered: rows.filter(r => r.status === 'Delivered').length,
+    Returned:  rows.filter(r => r.status === 'Returned').length,
+  };
+}
+
+function updateDashboardStats() {
+  updateDashboard(statsFromRows(allRows), [...allRows]);
+}
+
+// ─── Load data: show local cache instantly, then sync with server ─────────────
 async function loadData() {
+  // 1. Paint from localStorage immediately so the table is never blank
+  const cached = loadLocal();
+  if (cached.length) {
+    allRows = cached;
+    renderTable(filtered());
+    updateDashboard(statsFromRows(cached), [...cached]);
+  }
+
+  // 2. Sync with server in the background
   try {
     const [r1, r2] = await Promise.all([
       fetch('/api/shipments'),
       fetch('/api/dashboard'),
     ]);
-    allRows = await r1.json();
-    const dash = await r2.json();
-    updateDashboard(dash, [...allRows]);
+    const serverRows = await r1.json();
+    const dash       = await r2.json();
+
+    // Server wins if it returned records; otherwise keep local cache
+    if (serverRows.length > 0 || cached.length === 0) {
+      allRows = serverRows;
+      saveLocal(serverRows);
+    }
+    updateDashboard(dash.Total !== undefined ? dash : statsFromRows(allRows), [...allRows]);
     renderTable(filtered());
   } catch {
-    toast('Failed to load data', 'err');
+    // Server unreachable — local cache already rendered, silently ignore
   }
 }
 
