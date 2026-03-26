@@ -316,6 +316,24 @@ tbody tr:last-child td { border-bottom: none; }
 .b-delivered { background: rgba(16,185,129,.12);  color: #34d399; border: 1px solid rgba(16,185,129,.25); }
 .b-returned  { background: rgba(245,158,11,.12);  color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
 
+/* ─── TRACK BUTTON ───────────────────────────────────────────────────────── */
+.btn-track {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 8px; border: none;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  background: rgba(99,102,241,.12);
+  color: #a5b4fc;
+  border: 1px solid rgba(99,102,241,.25);
+  transition: all 0.18s; font-family: inherit;
+  white-space: nowrap;
+}
+.btn-track:hover {
+  background: rgba(99,102,241,.25);
+  border-color: rgba(99,102,241,.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99,102,241,.25);
+}
+
 /* ─── FILE LINK ───────────────────────────────────────────────────────────── */
 .flink {
   color: #818cf8; text-decoration: none; font-size: 12px;
@@ -368,6 +386,13 @@ tbody tr:last-child td { border-bottom: none; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
+
+/* ─── FORM ALWAYS VISIBLE ────────────────────────────────────────────────── */
+#formCard,
+#formCard .card-body,
+#formCard .form-grid { display: revert; }
+#formCard { display: block !important; }
+#formCard .card-body { display: block !important; }
 
 /* ─── EDIT BADGE ──────────────────────────────────────────────────────────── */
 .edit-badge {
@@ -544,7 +569,7 @@ tbody tr:last-child td { border-bottom: none; }
     <div class="page-body">
 
       <!-- ── FORM CARD ──────────────────────────────────────────────────── -->
-      <div class="card">
+      <div class="card" id="formCard">
         <div class="card-hdr">
           <span class="card-title" id="formTitle">New Shipment</span>
           <span class="edit-badge" id="editBadge">✏️ Editing Record</span>
@@ -662,12 +687,11 @@ tbody tr:last-child td { border-bottom: none; }
                 <th onclick="sortBy('awb')">AWB No.</th>
                 <th onclick="sortBy('shipping_cost')">Cost ($)</th>
                 <th onclick="sortBy('status')">Status</th>
-                <th>AWB File</th>
-                <th>Invoice</th>
+                <th style="text-align:center">Track</th>
               </tr>
             </thead>
             <tbody id="tBody">
-              <tr><td colspan="7">
+              <tr><td colspan="6">
                 <div class="empty">
                   <div class="empty-ico">⏳</div>
                   <div class="empty-txt">Loading records…</div>
@@ -965,7 +989,7 @@ function renderTable(data) {
 
   const tb = document.getElementById('tBody');
   if (!cnt) {
-    tb.innerHTML = `<tr><td colspan="7"><div class="empty">
+    tb.innerHTML = `<tr><td colspan="6"><div class="empty">
       <div class="empty-ico">📭</div>
       <div class="empty-txt">No shipments found</div>
     </div></td></tr>`;
@@ -980,12 +1004,11 @@ function renderTable(data) {
       <td><strong style="font-size:13px;letter-spacing:.01em">${r.awb}</strong></td>
       <td style="font-family:'Consolas',monospace">${(+r.shipping_cost || 0).toFixed(2)}</td>
       <td>${badge(r.status)}</td>
-      <td>${r.awb_file
-        ? `<a class="flink" href="/uploads/${r.awb_file}" target="_blank">📋 View</a>`
-        : '<span style="color:var(--muted)">—</span>'}</td>
-      <td>${r.invoice_file
-        ? `<a class="flink" href="/uploads/${r.invoice_file}" target="_blank">📄 View</a>`
-        : '<span style="color:var(--muted)">—</span>'}</td>
+      <td style="text-align:center">
+        <button class="btn-track" onclick="event.stopPropagation(); trackShipment('${r.awb}')">
+          📡 Track
+        </button>
+      </td>
     </tr>`).join('');
 }
 
@@ -1084,6 +1107,11 @@ async function loadData() {
   } catch {
     toast('Failed to load data', 'err');
   }
+}
+
+// ─── Track shipment ───────────────────────────────────────────────────────────
+function trackShipment(awb) {
+  window.open(`https://www.google.com/search?q=track+shipment+${encodeURIComponent(awb)}`, '_blank');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
