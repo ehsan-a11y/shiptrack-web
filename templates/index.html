@@ -1114,16 +1114,17 @@ function updateDashboard(dash, recent) {
   chart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Transit', 'Delivered', 'Returned'],
+      labels: ['Total', 'Transit', 'Delivered', 'Returned'],
       datasets: [{
         label: 'Shipments',
-        data: [dash.Transit, dash.Delivered, dash.Returned],
+        data: [dash.Total, dash.Transit, dash.Delivered, dash.Returned],
         backgroundColor: [
+          'rgba(168,85,247,.75)',
           'rgba(59,130,246,.75)',
           'rgba(16,185,129,.75)',
           'rgba(245,158,11,.75)',
         ],
-        borderColor:     ['#3b82f6', '#10b981', '#f59e0b'],
+        borderColor:     ['#a855f7', '#3b82f6', '#10b981', '#f59e0b'],
         borderWidth: 2,
         borderRadius: 8,
         borderSkipped: false,
