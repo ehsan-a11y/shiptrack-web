@@ -387,12 +387,47 @@ tbody tr:last-child td { border-bottom: none; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.2); }
 
-/* ─── FORM ALWAYS VISIBLE ────────────────────────────────────────────────── */
-#formCard,
-#formCard .card-body,
-#formCard .form-grid { display: revert; }
-#formCard { display: block !important; }
-#formCard .card-body { display: block !important; }
+/* ─── MODAL ──────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 200;
+}
+.modal-overlay.open { display: block; }
+
+.modal-panel {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -48%) scale(.96);
+  width: min(660px, calc(100vw - 24px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  z-index: 201;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease, transform .22s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+.modal-panel.open {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-hdr {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0;
+  background: var(--surface2); z-index: 1;
+}
+.modal-title { font-size: 15px; font-weight: 800; }
+.modal-body  { padding: 22px 20px; }
 
 /* ─── EDIT BADGE ──────────────────────────────────────────────────────────── */
 .edit-badge {
@@ -568,97 +603,6 @@ tbody tr:last-child td { border-bottom: none; }
     </div>
     <div class="page-body">
 
-      <!-- ── FORM CARD ──────────────────────────────────────────────────── -->
-      <div class="card" id="formCard">
-        <div class="card-hdr">
-          <span class="card-title" id="formTitle">New Shipment</span>
-          <span class="edit-badge" id="editBadge">✏️ Editing Record</span>
-        </div>
-        <div class="card-body">
-
-          <input type="hidden" id="eid">
-
-          <div class="form-grid">
-
-            <!-- Date -->
-            <div class="fgrp">
-              <label>📅 Date <span style="color:var(--danger)">*</span></label>
-              <input type="date" id="iDate">
-            </div>
-
-            <!-- AWB No -->
-            <div class="fgrp">
-              <label>✈️ AWB No. <span style="color:var(--danger)">*</span></label>
-              <input type="text" id="iAwb" placeholder="Enter AWB number">
-            </div>
-
-            <!-- Cost -->
-            <div class="fgrp">
-              <label>💰 Shipping Cost ($)</label>
-              <input type="number" id="iCost" placeholder="0.00" step="0.01" min="0">
-            </div>
-
-            <!-- Status -->
-            <div class="fgrp">
-              <label>🏷 Status</label>
-              <select id="iStatus">
-                <option value="Transit">🚚  Transit</option>
-                <option value="Delivered">✅  Delivered</option>
-                <option value="Returned">↩️  Returned</option>
-              </select>
-            </div>
-
-            <!-- Attach AWB -->
-            <div class="fgrp">
-              <label>📋 Attach AWB Document</label>
-              <div class="finput-row">
-                <div class="fdisp" id="awbDisp" onclick="document.getElementById('iAwbF').click()">
-                  📎 Click to attach AWB file…
-                </div>
-                <input type="file" id="iAwbF"
-                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
-                  onchange="setDisp('iAwbF','awbDisp')">
-                <button class="btn btn-ghost btn-icon" id="awbViewBtn"
-                  onclick="viewFile('awb')" style="display:none" title="View attached AWB">👁️</button>
-              </div>
-            </div>
-
-            <!-- Attach Invoice -->
-            <div class="fgrp">
-              <label>📄 Attach Invoice</label>
-              <div class="finput-row">
-                <div class="fdisp" id="invDisp" onclick="document.getElementById('iInv').click()">
-                  📎 Click to attach Invoice file…
-                </div>
-                <input type="file" id="iInv"
-                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
-                  onchange="setDisp('iInv','invDisp')">
-                <button class="btn btn-ghost btn-icon" id="invViewBtn"
-                  onclick="viewFile('inv')" style="display:none" title="View attached Invoice">👁️</button>
-              </div>
-            </div>
-
-          </div><!-- end form-grid -->
-
-          <!-- Action Buttons -->
-          <div class="form-actions">
-            <button class="btn btn-primary" id="btnSave" onclick="saveRecord()">
-              💾 Save Record
-            </button>
-            <button class="btn btn-update" id="btnUpdate" onclick="updateRecord()" disabled>
-              ✏️ Update Record
-            </button>
-            <button class="btn btn-ghost" onclick="clearForm()">
-              ✖ Clear
-            </button>
-            <button class="btn btn-danger" id="btnDelete" onclick="deleteRecord()" disabled>
-              🗑 Delete
-            </button>
-          </div>
-
-        </div><!-- end card-body -->
-      </div><!-- end form card -->
-
       <!-- ── RECORDS TABLE ──────────────────────────────────────────────── -->
       <div class="card">
         <div class="tbl-hdr">
@@ -706,6 +650,90 @@ tbody tr:last-child td { border-bottom: none; }
   </div><!-- end shipments page -->
 
 </div><!-- end .main -->
+
+<!-- ── SHIPMENT MODAL ──────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+<div class="modal-panel" id="modalPanel">
+  <div class="modal-hdr">
+    <span class="modal-title" id="formTitle">New Shipment</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="edit-badge" id="editBadge">✏️ Editing Record</span>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal()" title="Close">✕</button>
+    </div>
+  </div>
+  <div class="modal-body">
+    <input type="hidden" id="eid">
+    <div class="form-grid">
+      <!-- Date -->
+      <div class="fgrp">
+        <label>📅 Date <span style="color:var(--danger)">*</span></label>
+        <input type="date" id="iDate">
+      </div>
+      <!-- AWB No -->
+      <div class="fgrp">
+        <label>✈️ AWB No. <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="iAwb" placeholder="Enter AWB number">
+      </div>
+      <!-- Cost -->
+      <div class="fgrp">
+        <label>💰 Shipping Cost ($)</label>
+        <input type="number" id="iCost" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <!-- Status -->
+      <div class="fgrp">
+        <label>🏷 Status</label>
+        <select id="iStatus">
+          <option value="Transit">🚚  Transit</option>
+          <option value="Delivered">✅  Delivered</option>
+          <option value="Returned">↩️  Returned</option>
+        </select>
+      </div>
+      <!-- Attach AWB -->
+      <div class="fgrp">
+        <label>📋 Attach AWB Document</label>
+        <div class="finput-row">
+          <div class="fdisp" id="awbDisp" onclick="document.getElementById('iAwbF').click()">
+            📎 Click to attach AWB file…
+          </div>
+          <input type="file" id="iAwbF"
+            accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+            onchange="setDisp('iAwbF','awbDisp')">
+          <button class="btn btn-ghost btn-icon" id="awbViewBtn"
+            onclick="viewFile('awb')" style="display:none" title="View attached AWB">👁️</button>
+        </div>
+      </div>
+      <!-- Attach Invoice -->
+      <div class="fgrp">
+        <label>📄 Attach Invoice</label>
+        <div class="finput-row">
+          <div class="fdisp" id="invDisp" onclick="document.getElementById('iInv').click()">
+            📎 Click to attach Invoice file…
+          </div>
+          <input type="file" id="iInv"
+            accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+            onchange="setDisp('iInv','invDisp')">
+          <button class="btn btn-ghost btn-icon" id="invViewBtn"
+            onclick="viewFile('inv')" style="display:none" title="View attached Invoice">👁️</button>
+        </div>
+      </div>
+    </div><!-- end form-grid -->
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button class="btn btn-primary" id="btnSave" onclick="saveRecord()">
+        💾 Save Record
+      </button>
+      <button class="btn btn-update" id="btnUpdate" onclick="updateRecord()" disabled>
+        ✏️ Update Record
+      </button>
+      <button class="btn btn-ghost" onclick="clearForm()">
+        ✖ Clear
+      </button>
+      <button class="btn btn-danger" id="btnDelete" onclick="deleteRecord()" disabled>
+        🗑 Delete
+      </button>
+    </div>
+  </div><!-- end modal-body -->
+</div><!-- end modal-panel -->
 
 <!-- Toast container -->
 <div class="toast-wrap" id="toasts"></div>
@@ -812,13 +840,19 @@ function setEditMode(on) {
 }
 
 // ─── New / Clear form ─────────────────────────────────────────────────────────
-function newShipment() {
-  clearForm();
-  document.querySelector('#page-shipments .card').scrollIntoView({ behavior: 'smooth' });
-  setTimeout(() => document.getElementById('iDate').focus(), 200);
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('modalPanel').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
-function clearForm() {
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('modalPanel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function newShipment() {
   exAwb = ''; exInv = '';
   document.getElementById('eid').value   = '';
   document.getElementById('iDate').value = todayISO();
@@ -827,7 +861,6 @@ function clearForm() {
   document.getElementById('iStatus').value = 'Transit';
   document.getElementById('iAwbF').value = '';
   document.getElementById('iInv').value  = '';
-
   ['awbDisp', 'invDisp'].forEach((id, i) => {
     document.getElementById(id).textContent =
       i === 0 ? '📎 Click to attach AWB file…' : '📎 Click to attach Invoice file…';
@@ -835,9 +868,14 @@ function clearForm() {
   });
   document.getElementById('awbViewBtn').style.display = 'none';
   document.getElementById('invViewBtn').style.display = 'none';
-
   document.querySelectorAll('#tBody tr.selected').forEach(r => r.classList.remove('selected'));
   setEditMode(false);
+  openModal();
+  setTimeout(() => document.getElementById('iDate').focus(), 220);
+}
+
+function clearForm() {
+  newShipment();
 }
 
 // ─── Load row into form ───────────────────────────────────────────────────────
@@ -873,7 +911,7 @@ function loadRowIntoForm(ship) {
   }
 
   setEditMode(true);
-  document.querySelector('#page-shipments .card').scrollIntoView({ behavior: 'smooth' });
+  openModal();
 }
 
 // ─── Build FormData ───────────────────────────────────────────────────────────
@@ -907,7 +945,7 @@ async function saveRecord() {
     const res  = await fetch('/api/shipments', { method: 'POST', body: fd });
     const json = await res.json();
     if (json.error) { toast(json.error, 'err'); }
-    else { toast('Shipment saved successfully!'); clearForm(); await loadData(); }
+    else { toast('Shipment saved successfully!'); closeModal(); newShipment(); await loadData(); }
   } catch { toast('Save failed — check connection', 'err'); }
   finally  { btn.disabled = false; btn.innerHTML = '💾 Save Record'; }
 }
@@ -926,7 +964,7 @@ async function updateRecord() {
     const res  = await fetch(`/api/shipments/${selectedId}`, { method: 'PUT', body: fd });
     const json = await res.json();
     if (json.error) { toast(json.error, 'err'); }
-    else { toast('Record updated successfully!'); clearForm(); await loadData(); }
+    else { toast('Record updated successfully!'); closeModal(); await loadData(); }
   } catch { toast('Update failed — check connection', 'err'); }
   finally  { btn.disabled = false; btn.innerHTML = '✏️ Update Record'; }
 }
@@ -939,7 +977,7 @@ async function deleteRecord() {
   try {
     await fetch(`/api/shipments/${selectedId}`, { method: 'DELETE' });
     toast('Record deleted');
-    clearForm();
+    closeModal();
     await loadData();
   } catch { toast('Delete failed', 'err'); }
 }
