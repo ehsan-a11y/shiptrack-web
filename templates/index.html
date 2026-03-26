@@ -953,14 +953,12 @@ async function saveRecord() {
     const json = await res.json();
     if (json.error) { toast(json.error, 'err'); }
     else {
-      // Add new record to local state immediately — don't wait for reload
-      if (json.record) {
-        allRows.unshift(json.record);
-        saveLocal(allRows);
-      }
+      if (json.record) allRows.unshift(json.record);
+      saveLocal(allRows);
       closeModal();
       resetFormFields();
-      await loadData();         // sync with server (also re-renders table)
+      renderTable(filtered());
+      updateDashboardStats();
       toast('Shipment saved!');
     }
   } catch { toast('Save failed — check connection', 'err'); }
@@ -969,8 +967,9 @@ async function saveRecord() {
 
 // ─── Update (existing record) ─────────────────────────────────────────────────
 async function updateRecord() {
-  if (!selectedId) { toast('Select a record from the table first', 'err'); return; }
-  const fd = buildFD();
+  if (!selectedId) { toast('Select a record first by clicking a row', 'err'); return; }
+  const sid = selectedId;   // capture before resetFormFields() nulls it
+  const fd  = buildFD();
   if (!fd) return;
 
   const btn = document.getElementById('btnUpdate');
@@ -978,17 +977,20 @@ async function updateRecord() {
   btn.innerHTML = '<span class="spin"></span> Updating…';
 
   try {
-    const res  = await fetch(`/api/shipments/${selectedId}`, { method: 'PUT', body: fd });
+    const res  = await fetch(`/api/shipments/${sid}`, { method: 'PUT', body: fd });
     const json = await res.json();
     if (json.error) { toast(json.error, 'err'); }
     else {
       if (json.record) {
-        const idx = allRows.findIndex(r => r.id === selectedId);
+        const idx = allRows.findIndex(r => r.id === sid);
         if (idx !== -1) allRows[idx] = json.record;
-        saveLocal(allRows);
+        else allRows.unshift(json.record);
       }
-      closeModal(); resetFormFields();
-      await loadData();
+      saveLocal(allRows);
+      closeModal();
+      resetFormFields();
+      renderTable(filtered());
+      updateDashboardStats();
       toast('Record updated!');
     }
   } catch { toast('Update failed — check connection', 'err'); }
@@ -997,19 +999,19 @@ async function updateRecord() {
 
 // ─── Delete ───────────────────────────────────────────────────────────────────
 async function deleteRecord() {
-  if (!selectedId) { toast('Select a record from the table first', 'err'); return; }
-  if (!confirm(`Delete shipment record #${selectedId}?\nThis cannot be undone.`)) return;
+  if (!selectedId) { toast('Select a record first by clicking a row', 'err'); return; }
+  if (!confirm('Delete this shipment record? This cannot be undone.')) return;
+  const sid = selectedId;
 
   try {
-    await fetch(`/api/shipments/${selectedId}`, { method: 'DELETE' });
-    allRows = allRows.filter(r => r.id !== selectedId);
+    await fetch(`/api/shipments/${sid}`, { method: 'DELETE' });
+    allRows = allRows.filter(r => r.id !== sid);
     saveLocal(allRows);
     closeModal();
     resetFormFields();
     renderTable(filtered());
     updateDashboardStats();
     toast('Record deleted');
-    loadData();   // background sync
   } catch { toast('Delete failed', 'err'); }
 }
 
