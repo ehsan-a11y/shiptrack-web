@@ -1112,10 +1112,11 @@ function updateDashboard(dash, recent) {
   const ctx = document.getElementById('dashChart').getContext('2d');
   if (chart) chart.destroy();
   chart = new Chart(ctx, {
-    type: 'doughnut',
+    type: 'bar',
     data: {
       labels: ['Transit', 'Delivered', 'Returned'],
       datasets: [{
+        label: 'Shipments',
         data: [dash.Transit, dash.Delivered, dash.Returned],
         backgroundColor: [
           'rgba(59,130,246,.75)',
@@ -1123,24 +1124,30 @@ function updateDashboard(dash, recent) {
           'rgba(245,158,11,.75)',
         ],
         borderColor:     ['#3b82f6', '#10b981', '#f59e0b'],
-        borderWidth: 2, hoverOffset: 8,
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: true,
-      cutout: '62%',
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            color: '#94a3b8', font: { size: 12 }, padding: 18,
-            usePointStyle: true, pointStyleWidth: 10,
-          }
-        },
+        legend: { display: false },
         tooltip: {
           backgroundColor: '#1a2236', titleColor: '#94a3b8',
           bodyColor: '#f1f5f9',
           borderColor: 'rgba(255,255,255,.08)', borderWidth: 1, padding: 10,
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,.04)' },
+          ticks: { color: '#94a3b8', font: { size: 12, weight: '600' } },
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,.06)' },
+          ticks: { color: '#94a3b8', font: { size: 11 }, stepSize: 1 },
+          beginAtZero: true,
         }
       }
     }
@@ -1222,7 +1229,7 @@ async function loadData() {
 
 // ─── Track shipment ───────────────────────────────────────────────────────────
 function trackShipment(awb) {
-  window.open(`https://www.google.com/search?q=track+shipment+${encodeURIComponent(awb)}`, '_blank');
+  window.open(`https://parcelsapp.com/en/tracking/${encodeURIComponent(awb)}`, '_blank');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
